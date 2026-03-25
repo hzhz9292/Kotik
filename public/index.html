@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3 Кота Онлайн</title>
+
+<style>
+body {
+  margin:0;
+  overflow:hidden;
+  background:#0b1020;
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+}
+#menu {
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+}
+button {
+  padding:15px 25px;
+  font-size:18px;
+  border:none;
+  border-radius:10px;
+  background:orange;
+  color:white;
+}
+canvas {
+  display:block;
+}
+</style>
+</head>
+
+<body>
+
+<div id="menu">
+  <h1>3 Кота Онлайн</h1>
+  <button onclick="start()">Играть онлайн</button>
+</div>
+
+<canvas id="game"></canvas>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+const socket = io();
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let mySide = null;
+let state = null;
+
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+function start(){
+  document.getElementById("menu").style.display = "none";
+  socket.emit("findMatch",{character:"Гоня"});
+}
+
+socket.on("matchFound",(data)=>{
+  mySide = data.side;
+});
+
+socket.on("state",(data)=>{
+  state = data.state;
+});
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(!state){
+    requestAnimationFrame(draw);
+    return;
+  }
+
+  // поле
+  ctx.fillStyle="#111";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // линия центра
+  ctx.strokeStyle="white";
+  ctx.beginPath();
+  ctx.moveTo(canvas.width/2,0);
+  ctx.lineTo(canvas.width/2,canvas.height);
+  ctx.stroke();
+
+  // шайба
+  let px = state.puck.x/state.config.widthcanvas.width;
+  let py = state.puck.y/state.config.heightcanvas.height;
+
+  ctx.beginPath();
+  ctx.arc(px,py,10,0,Math.PI2);
+  ctx.fillStyle="white";
+  ctx.fill();
+
+  // игроки
+  ["left","right"].forEach(side=>{
+    let p = state.players[side];
+    let x = p.x/state.config.widthcanvas.width;
+    let y = p.y/state.config.heightcanvas.height;
+
+    ctx.beginPath();
+    ctx.arc(x,y,20,0,Math.PI2);
+    ctx.fillStyle = side===mySide ? "orange" : "gray";
+    ctx.fill();
+  });
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+canvas.addEventListener("touchmove",(e)=>{
+  if(!mySide) return;
+
+  let t = e.touches[0];
+  let x = t.clientX/canvas.widthstate.config.width;
+  let y = t.clientY/canvas.heightstate.config.height;
+
+  socket.emit("move",{x,y});
+});
+</script>
+
+</body>
+</html>
