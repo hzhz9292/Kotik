@@ -1,132 +1,696 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3 Кота Онлайн</title>
-
-<style>
-body {
-  margin:0;
-  overflow:hidden;
-  background:#0b1020;
-  color:white;
-  font-family:sans-serif;
-  text-align:center;
-}
-#menu {
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-}
-button {
-  padding:15px 25px;
-  font-size:18px;
-  border:none;
-  border-radius:10px;
-  background:orange;
-  color:white;
-}
-canvas {
-  display:block;
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>3 Кота: Онлайн Аэрохоккей</title>
+  <style>
+    :root{
+      --bg1:#0f172a;
+      --bg2:#1e293b;
+      --panel:rgba(15,23,42,.84);
+      --line:rgba(255,255,255,.18);
+      --text:#f8fafc;
+      --muted:#cbd5e1;
+      --accent:#f59e0b;
+      --danger:#ef4444;
+      --ok:#22c55e;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{
+      margin:0;
+      padding:0;
+      width:100%;
+      height:100%;
+      overflow:hidden;
+      background:radial-gradient(circle at top,#1d4ed8 0%,#0f172a 38%,#020617 100%);
+      color:var(--text);
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      touch-action:none;
+    }
+    #app{position:relative;width:100vw;height:100vh}
+    canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+    .overlay{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      background:linear-gradient(180deg,rgba(2,6,23,.65),rgba(2,6,23,.92));
+      backdrop-filter:blur(8px);
+      z-index:6
+    }
+    .hidden{display:none!important}
+    .panel{
+      width:min(980px,100%);
+      background:var(--panel);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:24px;
+      box-shadow:0 30px 80px rgba(0,0,0,.32);
+      padding:22px
+    }
+    .title{
+      font-size:clamp(30px,5vw,52px);
+      font-weight:900;
+      text-align:center;
+      margin-bottom:8px
+    }
+    .subtitle{
+      text-align:center;
+      color:var(--muted);
+      margin-bottom:20px;
+      font-size:clamp(14px,2vw,18px)
+    }
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      margin-bottom:18px
+    }
+    .stat{
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.09);
+      border-radius:18px;
+      padding:14px;
+      text-align:center
+    }
+    .label{font-size:12px;color:var(--muted);margin-bottom:4px}
+    .value{font-size:clamp(18px,3vw,28px);font-weight:900}
+    .character-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .character{
+      border-radius:20px;
+      border:2px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.05);
+      padding:12px;
+      cursor:pointer;
+      transition:.12s transform ease,.12s border-color ease,.12s background ease;
+      user-select:none
+    }
+    .character:active{transform:scale(.985)}
+    .character.selected{
+      border-color:var(--accent);
+      background:rgba(245,158,11,.12);
+      box-shadow:0 0 0 4px rgba(245,158,11,.10) inset
+    }
+    .avatar{
+      width:100%;
+      aspect-ratio:1/1;
+      border-radius:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:900;
+      font-size:clamp(22px,3vw,34px);
+      margin-bottom:10px;
+      color:#fff;
+      text-shadow:0 2px 8px rgba(0,0,0,.22)
+    }
+    .c1{background:linear-gradient(135deg,#fb7185,#f59e0b)}
+    .c2{background:linear-gradient(135deg,#f472b6,#60a5fa)}
+    .c3{background:linear-gradient(135deg,#f59e0b,#ef4444)}
+    .c4{background:linear-gradient(135deg,#34d399,#3b82f6)}
+    .char-name{text-align:center;font-weight:800;font-size:18px}
+    .char-role{text-align:center;color:var(--muted);font-size:13px;margin-top:4px}
+    .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+    button{
+      appearance:none;
+      border:none;
+      border-radius:16px;
+      padding:14px 22px;
+      font-size:17px;
+      font-weight:900;
+      cursor:pointer;
+      color:#fff;
+      transition:.12s transform ease,.12s opacity ease
+    }
+    button:active{transform:scale(.99)}
+    .primary{background:linear-gradient(135deg,#f59e0b,#ef4444)}
+    .secondary{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.10)}
+    .hud{
+      position:absolute;
+      top:max(10px,env(safe-area-inset-top));
+      left:50%;
+      transform:translateX(-50%);
+      width:min(980px,calc(100% - 20px));
+      z-index:5;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      pointer-events:none
+    }
+    .hud-box{
+      background:rgba(2,6,23,.58);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      padding:10px 14px;
+      backdrop-filter:blur(8px);
+      min-width:0
+    }
+    .hud-main{display:flex;align-items:center;justify-content:center;gap:10px;flex:1}
+    .score{font-size:clamp(26px,4vw,40px);font-weight:900;min-width:120px;text-align:center}
+    .small{font-size:12px;color:var(--muted)}
+    .big{font-size:clamp(15px,2vw,20px);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .toast{
+      position:absolute;
+      left:50%;
+      bottom:max(16px,env(safe-area-inset-bottom));
+      transform:translateX(-50%);
+      background:rgba(2,6,23,.78);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:999px;
+      padding:12px 18px;
+      font-weight:800;
+      z-index:5
+    }
+    .center-note{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      background:rgba(2,6,23,.68);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:20px;
+      padding:14px 20px;
+      font-weight:900;
+      font-size:clamp(18px,3vw,28px);
+      z-index:4
+    }
+    @media (max-width:800px){
+      .stats,.character-grid{grid-template-columns:repeat(2,1fr)}
+      .hud{width:calc(100% - 12px);top:max(6px,env(safe-area-inset-top))}
+      .hud-box{padding:8px 10px;border-radius:14px}
+    }
+  </style>
 </head>
-
 <body>
+<div id="app">
+  <canvas id="game"></canvas>
 
-<div id="menu">
-  <h1>3 Кота Онлайн</h1>
-  <button onclick="start()">Играть онлайн</button>
+  <div class="hud">
+    <div class="hud-box">
+      <div class="small">Ты</div>
+      <div class="big" id="youName">—</div>
+    </div>
+    <div class="hud-box hud-main">
+      <div>
+        <div class="small">Матч до 5</div>
+        <div class="score" id="scoreText">0 : 0</div>
+      </div>
+      <div>
+        <div class="small">Статус</div>
+        <div class="big" id="statusText">Меню</div>
+      </div>
+    </div>
+    <div class="hud-box" style="text-align:right">
+      <div class="small">Соперник</div>
+      <div class="big" id="enemyName">—</div>
+    </div>
+  </div>
+
+  <div id="centerNote" class="center-note hidden"></div>
+  <div id="toast" class="toast hidden"></div>
+
+  <div class="overlay" id="menu">
+    <div class="panel">
+      <div class="title">3 Кота: Онлайн Аэрохоккей</div>
+      <div class="subtitle">Быстрый матч 1 на 1. Игрок слева и игрок справа не могут заходить на чужую половину. Соперник подбирается автоматически.</div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="label">ЭЛО</div>
+          <div class="value" id="eloValue">1000</div>
+        </div>
+        <div class="stat">
+          <div class="label">Уровень</div>
+          <div class="value" id="levelValue">1</div>
+        </div>
+        <div class="stat">
+          <div class="label">Сыграно матчей</div>
+          <div class="value" id="matchesValue">0</div>
+        </div>
+      </div>
+
+      <div class="character-grid" id="characterGrid"></div>
+
+      <div class="actions">
+        <button class="primary" id="findBtn">Играть онлайн</button>
+        <button class="secondary" id="resetBtn">Сбросить прогресс</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="resultOverlay">
+    <div class="panel" style="max-width:680px">
+      <div class="title" id="resultTitle">Матч окончен</div>
+      <div class="subtitle" id="resultSub">Подсчёт награды…</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Новая ЭЛО награда</div>
+          <div class="value" id="gainValue">+0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Твоя ЭЛО</div>
+          <div class="value" id="newEloValue">1000</div>
+        </div>
+        <div class="stat">
+          <div class="label">Твой уровень</div>
+          <div class="value" id="newLevelValue">1</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="againBtn">Новый быстрый матч</button>
+        <button class="secondary" id="menuBtn">В меню</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<canvas id="game"></canvas>
-
 <script src="/socket.io/socket.io.js"></script>
-
 <script>
-const socket = io();
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
 
-let mySide = null;
-let state = null;
+  const menu = document.getElementById('menu');
+  const resultOverlay = document.getElementById('resultOverlay');
+  const centerNote = document.getElementById('centerNote');
+  const toast = document.getElementById('toast');
 
-function resize(){
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resize);
-resize();
+  const scoreText = document.getElementById('scoreText');
+  const statusText = document.getElementById('statusText');
+  const youName = document.getElementById('youName');
+  const enemyName = document.getElementById('enemyName');
 
-function start(){
-  document.getElementById("menu").style.display = "none";
-  socket.emit("findMatch",{character:"Гоня"});
-}
+  const eloValue = document.getElementById('eloValue');
+  const levelValue = document.getElementById('levelValue');
+  const matchesValue = document.getElementById('matchesValue');
 
-socket.on("matchFound",(data)=>{
-  mySide = data.side;
-});
+  const gainValue = document.getElementById('gainValue');
+  const newEloValue = document.getElementById('newEloValue');
+  const newLevelValue = document.getElementById('newLevelValue');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultSub = document.getElementById('resultSub');
 
-socket.on("state",(data)=>{
-  state = data.state;
-});
+  const STORAGE_KEY = 'three_cats_online_progress_v1';
+  const characters = [
+    { name: 'Гоня', role: 'Быстрый старт', cls: 'c1', short: 'Г' },
+    { name: 'Карамелька', role: 'Точный удар', cls: 'c2', short: 'К' },
+    { name: 'Коржик', role: 'Сильный напор', cls: 'c3', short: 'К' },
+    { name: 'Компот', role: 'Спокойный контроль', cls: 'c4', short: 'К' },
+  ];
 
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  let progress = loadProgress();
+  let selectedCharacter = progress.character || 'Гоня';
+  let mySide = null;
+  let roomId = null;
+  let gameState = null;
+  let config = {
+    width: 1280,
+    height: 720,
+    goalHeight: 180,
+    malletRadius: 34,
+    puckRadius: 20
+  };
+  let pointerActive = false;
 
-  if(!state){
-    requestAnimationFrame(draw);
-    return;
+  const socket = io();
+
+  function loadProgress() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return { elo: 1000, matches: 0, character: 'Гоня' };
   }
 
-  // поле
-  ctx.fillStyle="#111";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  function saveProgress() {
+    progress.character = selectedCharacter;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  }
 
-  // линия центра
-  ctx.strokeStyle="white";
-  ctx.beginPath();
-  ctx.moveTo(canvas.width/2,0);
-  ctx.lineTo(canvas.width/2,canvas.height);
-  ctx.stroke();
+  function getLevel(elo) {
+    return Math.floor(Math.max(0, elo - 1000) / 1000) + 1;
+  }
 
-  // шайба
-  let px = state.puck.x/state.config.widthcanvas.width;
-  let py = state.puck.y/state.config.heightcanvas.height;
+  function renderMenuStats() {
+    eloValue.textContent = progress.elo;
+    levelValue.textContent = getLevel(progress.elo);
+    matchesValue.textContent = progress.matches;
+  }
 
-  ctx.beginPath();
-  ctx.arc(px,py,10,0,Math.PI2);
-  ctx.fillStyle="white";
-  ctx.fill();
+  function renderCharacters() {
+    const grid = document.getElementById('characterGrid');
+    grid.innerHTML = '';
+    characters.forEach(char => {
+      const el = document.createElement('div');
+      el.className = 'character' + (selectedCharacter === char.name ? ' selected' : '');
+      el.innerHTML = `
+        <div class="avatar ${char.cls}">${char.short}</div>
+        <div class="char-name">${char.name}</div>
+        <div class="char-role">${char.role}</div>
+      `;
+      el.onclick = () => {
+        selectedCharacter = char.name;
+        saveProgress();
+        renderCharacters();
+      };
+      grid.appendChild(el);
+    });
+  }
 
-  // игроки
-  ["left","right"].forEach(side=>{
-    let p = state.players[side];
-    let x = p.x/state.config.widthcanvas.width;
-    let y = p.y/state.config.heightcanvas.height;
+  function showToast(text, time = 1800) {
+    toast.textContent = text;
+    toast.classList.remove('hidden');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.add('hidden'), time);
+  }
+
+  function showCenter(text) {
+    centerNote.textContent = text;
+    centerNote.classList.remove('hidden');
+  }
+
+  function hideCenter() {
+    centerNote.classList.add('hidden');
+  }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function worldToScreenX(x) {
+    return (x / config.width) * window.innerWidth;
+  }
+  function worldToScreenY(y) {
+    return (y / config.height) * window.innerHeight;
+  }
+  function screenToWorldX(x) {
+    return (x / window.innerWidth) * config.width;
+  }
+  function screenToWorldY(y) {
+    return (y / window.innerHeight) * config.height;
+  }
+
+  function sendPointer(clientX, clientY) {
+    if (!mySide) return;
+    let x = screenToWorldX(clientX);
+    let y = screenToWorldY(clientY);
+
+    if (mySide === 'left') {
+      x = Math.max(config.malletRadius + 12, Math.min(config.width / 2 - config.malletRadius - 8, x));
+    } else {
+      x = Math.max(config.width / 2 + config.malletRadius + 8, Math.min(config.width - config.malletRadius - 12, x));
+    }
+    y = Math.max(config.malletRadius + 12, Math.min(config.height - config.malletRadius - 12, y));
+    socket.emit('move', { x, y });
+  }
+
+  function setupInput() {
+    canvas.addEventListener('pointerdown', e => {
+      pointerActive = true;
+      sendPointer(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener('pointermove', e => {
+      if (!pointerActive) return;
+      sendPointer(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener('touchstart', e => {
+      if (!e.touches[0]) return;
+      pointerActive = true;
+      sendPointer(e.touches[0].clientX, e.touches[0].clientY);
+      e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', e => {
+      if (!e.touches[0]) return;
+      if (!pointerActive) return;
+      sendPointer(e.touches[0].clientX, e.touches[0].clientY);
+      e.preventDefault();
+    }, { passive: false });
+
+    window.addEventListener('pointerup', () => pointerActive = false);
+    window.addEventListener('pointercancel', () => pointerActive = false);
+    window.addEventListener('touchend', () => pointerActive = false, { passive: true });
+    window.addEventListener('touchcancel', () => pointerActive = false, { passive: true });
+  }
+
+  function drawRoundedRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawField() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    const pad = 14;
+    const radius = 28;
+
+    ctx.save();
+    drawRoundedRect(pad, pad, w - pad * 2, h - pad * 2, radius);
+    ctx.fillStyle = 'rgba(15,23,42,0.35)';
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.stroke();
+    ctx.restore();
+
+    const midX = worldToScreenX(config.width / 2);
+    const goalTop = worldToScreenY(config.height / 2 - config.goalHeight / 2);
+    const goalBottom = worldToScreenY(config.height / 2 + config.goalHeight / 2);
+
+    ctx.save();
+    ctx.setLineDash([12, 14]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(midX, pad);
+    ctx.lineTo(midX, h - pad);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
     ctx.beginPath();
-    ctx.arc(x,y,20,0,Math.PI2);
-    ctx.fillStyle = side===mySide ? "orange" : "gray";
+    ctx.arc(midX, h / 2, Math.min(w, h) * 0.12, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(245,158,11,0.55)';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(pad, goalTop);
+    ctx.lineTo(pad, goalBottom);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(w - pad, goalTop);
+    ctx.lineTo(w - pad, goalBottom);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fillRect(pad, pad, midX - pad, h - pad * 2);
+    ctx.fillRect(midX, pad, w - pad - midX, h - pad * 2);
+    ctx.restore();
+  }
+
+  function drawMallet(player, mine) {
+    const x = worldToScreenX(player.x);
+    const y = worldToScreenY(player.y);
+    const r = (config.malletRadius / config.width) * window.innerWidth;
+
+    const map = {
+      'Гоня': ['#fb7185', '#f59e0b', 'Г'],
+      'Карамелька': ['#f472b6', '#60a5fa', 'К'],
+      'Коржик': ['#f59e0b', '#ef4444', 'К'],
+      'Компот': ['#34d399', '#3b82f6', 'К'],
+    };
+    const item = map[player.character] || ['#f59e0b', '#ef4444', '?'];
+
+    const grad = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+    grad.addColorStop(0, item[0]);
+    grad.addColorStop(1, item[1]);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
     ctx.fill();
+    ctx.lineWidth = mine ? 5 : 3;
+    ctx.strokeStyle = mine ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.55)';
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.97)';
+    ctx.font = `900 ${Math.max(16, r * 0.95)}px system-ui`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item[2], x, y + 1);
+    ctx.restore();
+  }
+
+  function drawPuck(puck) {
+    const x = worldToScreenX(puck.x);
+    const y = worldToScreenY(puck.y);
+    const r = (config.puckRadius / config.width) * window.innerWidth;
+
+    ctx.save();
+    const grad = ctx.createRadialGradient(x - r * 0.2, y - r * 0.2, r * 0.2, x, y, r);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(1, '#94a3b8');
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(15,23,42,0.55)';
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function loop() {
+    drawField();
+
+    if (gameState && gameState.players) {
+      drawMallet(gameState.players.left, mySide === 'left');
+      drawMallet(gameState.players.right, mySide === 'right');
+      drawPuck(gameState.puck);
+    } else {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.font = '900 28px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('Выбери персонажа и нажми "Играть онлайн"', window.innerWidth / 2, window.innerHeight / 2);
+      ctx.restore();
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  document.getElementById('findBtn').onclick = () => {
+    resultOverlay.classList.add('hidden');
+    menu.classList.add('hidden');
+    showCenter('Ищем соперника…');
+    statusText.textContent = 'Поиск матча';
+    socket.emit('findMatch', { character: selectedCharacter });
+  };
+
+  document.getElementById('againBtn').onclick = () => {
+    resultOverlay.classList.add('hidden');
+    showCenter('Ищем соперника…');
+    statusText.textContent = 'Поиск матча';
+    socket.emit('findMatch', { character: selectedCharacter });
+  };
+
+  document.getElementById('menuBtn').onclick = () => {
+    resultOverlay.classList.add('hidden');
+    menu.classList.remove('hidden');
+    mySide = null;
+    roomId = null;
+    gameState = null;
+    statusText.textContent = 'Меню';
+    youName.textContent = '—';
+    enemyName.textContent = '—';
+  };
+
+  document.getElementById('resetBtn').onclick = () => {
+    progress = { elo: 1000, matches: 0, character: selectedCharacter };
+    saveProgress();
+    renderMenuStats();
+    showToast('Прогресс сброшен');
+  };
+
+  socket.on('queue', () => {
+    menu.classList.add('hidden');
+    showCenter('Ищем соперника…');
+    statusText.textContent = 'Поиск матча';
   });
 
-  requestAnimationFrame(draw);
-}
-draw();
+  socket.on('matchFound', payload => {
+    mySide = payload.side;
+    roomId = payload.roomId;
+    hideCenter();
+    showToast('Соперник найден');
+    resultOverlay.classList.add('hidden');
+    statusText.textContent = mySide === 'left' ? 'Ты слева' : 'Ты справа';
+    youName.textContent = selectedCharacter + (mySide === 'left' ? ' • слева' : ' • справа');
+    enemyName.textContent = payload.opponent || 'Игрок';
+  });
 
-canvas.addEventListener("touchmove",(e)=>{
-  if(!mySide) return;
+  socket.on('state', payload => {
+    config = payload.config || config;
+    gameState = payload.state || gameState;
 
-  let t = e.touches[0];
-  let x = t.clientX/canvas.widthstate.config.width;
-  let y = t.clientY/canvas.heightstate.config.height;
+    if (!gameState) return;
 
-  socket.emit("move",{x,y});
-});
+    scoreText.textContent = `${gameState.score.left} : ${gameState.score.right}`;
+
+    if (gameState.status === 'playing') {
+      statusText.textContent = 'Матч идёт';
+      hideCenter();
+    } else if (gameState.status === 'goal') {
+      statusText.textContent = 'Гол';
+      showCenter(gameState.goalMessage || 'Гол!');
+    } else if (gameState.status === 'finished') {
+      statusText.textContent = 'Матч окончен';
+      hideCenter();
+
+      const myWon = gameState.winner === mySide;
+      const gain = Math.floor(Math.random() * 301) + 300;
+      progress.elo += gain;
+      progress.matches += 1;
+      saveProgress();
+      renderMenuStats();
+
+      gainValue.textContent = `+${gain}`;
+      newEloValue.textContent = progress.elo;
+      newLevelValue.textContent = getLevel(progress.elo);
+      resultTitle.textContent = myWon ? 'Победа!' : 'Матч окончен';
+      resultSub.textContent = myWon
+        ? 'Хорошая катка. ЭЛО уже начислено.'
+        : 'Даже после поражения опыт идёт дальше. ЭЛО уже начислено.';
+      resultOverlay.classList.remove('hidden');
+    }
+  });
+
+  socket.on('opponentLeft', () => {
+    showCenter('Соперник вышел');
+    statusText.textContent = 'Соперник вышел';
+    showToast('Соперник отключился');
+    setTimeout(() => {
+      menu.classList.remove('hidden');
+      hideCenter();
+      gameState = null;
+      mySide = null;
+      roomId = null;
+    }, 1400);
+  });
+
+  socket.on('connect', () => {
+    showToast('Соединение установлено');
+  });
+
+  socket.on('disconnect', () => {
+    showCenter('Нет соединения с сервером');
+    statusText.textContent = 'Оффлайн';
+  });
+
+  renderCharacters();
+  renderMenuStats();
+  resize();
+  setupInput();
+  loop();
+  window.addEventListener('resize', resize);
+})();
 </script>
-
 </body>
 </html>
