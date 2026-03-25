@@ -2,184 +2,389 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+  />
   <title>3 Кота: Онлайн Аэрохоккей</title>
   <style>
     :root{
       --bg1:#0f172a;
       --bg2:#1e293b;
-      --panel:rgba(15,23,42,.84);
-      --line:rgba(255,255,255,.18);
+      --panel:rgba(15,23,42,.92);
+      --line:rgba(255,255,255,.16);
       --text:#f8fafc;
       --muted:#cbd5e1;
       --accent:#f59e0b;
-      --danger:#ef4444;
-      --ok:#22c55e;
+      --accent2:#ef4444;
+      --card:rgba(255,255,255,.06);
+      --cardBorder:rgba(255,255,255,.10);
     }
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{
+
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    html, body {
       margin:0;
       padding:0;
       width:100%;
       height:100%;
       overflow:hidden;
-      background:radial-gradient(circle at top,#1d4ed8 0%,#0f172a 38%,#020617 100%);
+      background:radial-gradient(circle at top, #1d4ed8 0%, #0f172a 38%, #020617 100%);
       color:var(--text);
-      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
       touch-action:none;
     }
-    #app{position:relative;width:100vw;height:100vh}
-    canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+    body {
+      overscroll-behavior:none;
+    }
+
+    #app{
+      position:relative;
+      width:100vw;
+      height:100vh;
+      overflow:hidden;
+    }
+
+    canvas{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      display:block;
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
     .overlay{
       position:absolute;
       inset:0;
+      z-index:20;
+      background:linear-gradient(180deg, rgba(2,6,23,.52), rgba(2,6,23,.88));
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      overflow-y:auto;
+      overflow-x:hidden;
+      padding:
+        max(14px, env(safe-area-inset-top))
+        14px
+        max(18px, env(safe-area-inset-bottom))
+        14px;
+    }
+
+    .overlay-inner{
+      min-height:100%;
       display:flex;
       align-items:center;
       justify-content:center;
-      padding:18px;
-      background:linear-gradient(180deg,rgba(2,6,23,.65),rgba(2,6,23,.92));
-      backdrop-filter:blur(8px);
-      z-index:6
     }
-    .hidden{display:none!important}
+
     .panel{
-      width:min(980px,100%);
+      width:min(980px, 100%);
       background:var(--panel);
       border:1px solid rgba(255,255,255,.10);
-      border-radius:24px;
-      box-shadow:0 30px 80px rgba(0,0,0,.32);
-      padding:22px
+      border-radius:22px;
+      box-shadow:0 20px 70px rgba(0,0,0,.35);
+      padding:18px;
+      margin:auto;
     }
+
     .title{
-      font-size:clamp(30px,5vw,52px);
+      font-size:clamp(28px, 7vw, 50px);
       font-weight:900;
       text-align:center;
-      margin-bottom:8px
+      line-height:1.02;
+      margin:0 0 8px;
     }
+
     .subtitle{
       text-align:center;
       color:var(--muted);
-      margin-bottom:20px;
-      font-size:clamp(14px,2vw,18px)
+      font-size:clamp(14px, 3.3vw, 18px);
+      line-height:1.35;
+      margin:0 0 16px;
     }
+
     .stats{
       display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:12px;
-      margin-bottom:18px
+      grid-template-columns:repeat(3, 1fr);
+      gap:10px;
+      margin-bottom:14px;
     }
+
     .stat{
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.09);
-      border-radius:18px;
-      padding:14px;
-      text-align:center
+      background:var(--card);
+      border:1px solid var(--cardBorder);
+      border-radius:16px;
+      padding:12px 10px;
+      text-align:center;
     }
-    .label{font-size:12px;color:var(--muted);margin-bottom:4px}
-    .value{font-size:clamp(18px,3vw,28px);font-weight:900}
-    .character-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+    .label{
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:4px;
+    }
+
+    .value{
+      font-size:clamp(18px, 5vw, 28px);
+      font-weight:900;
+      line-height:1.1;
+    }
+
+    .section-title{
+      font-weight:900;
+      font-size:18px;
+      margin:4px 0 10px;
+      text-align:center;
+    }
+
+    .character-grid{
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:10px;
+    }
+
     .character{
-      border-radius:20px;
-      border:2px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      border:2px solid rgba(255,255,255,.08);
       background:rgba(255,255,255,.05);
-      padding:12px;
+      padding:10px;
       cursor:pointer;
-      transition:.12s transform ease,.12s border-color ease,.12s background ease;
-      user-select:none
+      user-select:none;
+      transition:.12s transform ease, .12s border-color ease, .12s background ease;
     }
-    .character:active{transform:scale(.985)}
+
+    .character:active{
+      transform:scale(.985);
+    }
+
     .character.selected{
       border-color:var(--accent);
-      background:rgba(245,158,11,.12);
-      box-shadow:0 0 0 4px rgba(245,158,11,.10) inset
+      background:rgba(245,158,11,.13);
+      box-shadow:0 0 0 3px rgba(245,158,11,.12) inset;
     }
+
     .avatar{
       width:100%;
       aspect-ratio:1/1;
-      border-radius:18px;
+      border-radius:16px;
       display:flex;
       align-items:center;
       justify-content:center;
+      font-size:clamp(22px, 7vw, 34px);
       font-weight:900;
-      font-size:clamp(22px,3vw,34px);
-      margin-bottom:10px;
       color:#fff;
-      text-shadow:0 2px 8px rgba(0,0,0,.22)
+      margin-bottom:8px;
+      text-shadow:0 2px 8px rgba(0,0,0,.22);
     }
+
     .c1{background:linear-gradient(135deg,#fb7185,#f59e0b)}
     .c2{background:linear-gradient(135deg,#f472b6,#60a5fa)}
     .c3{background:linear-gradient(135deg,#f59e0b,#ef4444)}
     .c4{background:linear-gradient(135deg,#34d399,#3b82f6)}
-    .char-name{text-align:center;font-weight:800;font-size:18px}
-    .char-role{text-align:center;color:var(--muted);font-size:13px;margin-top:4px}
-    .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+
+    .char-name{
+      text-align:center;
+      font-weight:800;
+      font-size:16px;
+      line-height:1.15;
+    }
+
+    .char-role{
+      text-align:center;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.2;
+      margin-top:4px;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-top:16px;
+      position:sticky;
+      bottom:0;
+      padding-top:8px;
+      background:linear-gradient(180deg, rgba(15,23,42,0), rgba(15,23,42,.88) 35%);
+    }
+
     button{
       appearance:none;
       border:none;
       border-radius:16px;
-      padding:14px 22px;
+      padding:14px 18px;
+      min-height:52px;
       font-size:17px;
       font-weight:900;
-      cursor:pointer;
       color:#fff;
-      transition:.12s transform ease,.12s opacity ease
+      cursor:pointer;
     }
-    button:active{transform:scale(.99)}
-    .primary{background:linear-gradient(135deg,#f59e0b,#ef4444)}
-    .secondary{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.10)}
+
+    button:active{
+      transform:scale(.99);
+    }
+
+    .primary{
+      background:linear-gradient(135deg, var(--accent), var(--accent2));
+      min-width:190px;
+    }
+
+    .secondary{
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.10);
+      min-width:160px;
+    }
+
     .hud{
       position:absolute;
-      top:max(10px,env(safe-area-inset-top));
       left:50%;
       transform:translateX(-50%);
-      width:min(980px,calc(100% - 20px));
-      z-index:5;
+      top:max(8px, env(safe-area-inset-top));
+      width:min(1040px, calc(100% - 12px));
+      z-index:8;
       display:flex;
+      gap:8px;
       justify-content:space-between;
-      gap:10px;
-      pointer-events:none
+      pointer-events:none;
     }
+
     .hud-box{
-      background:rgba(2,6,23,.58);
+      background:rgba(2,6,23,.62);
       border:1px solid rgba(255,255,255,.10);
-      border-radius:18px;
-      padding:10px 14px;
+      border-radius:16px;
+      padding:8px 10px;
+      min-width:0;
       backdrop-filter:blur(8px);
-      min-width:0
+      -webkit-backdrop-filter:blur(8px);
     }
-    .hud-main{display:flex;align-items:center;justify-content:center;gap:10px;flex:1}
-    .score{font-size:clamp(26px,4vw,40px);font-weight:900;min-width:120px;text-align:center}
-    .small{font-size:12px;color:var(--muted)}
-    .big{font-size:clamp(15px,2vw,20px);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .toast{
-      position:absolute;
-      left:50%;
-      bottom:max(16px,env(safe-area-inset-bottom));
-      transform:translateX(-50%);
-      background:rgba(2,6,23,.78);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:999px;
-      padding:12px 18px;
+
+    .hud-main{
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      min-width:0;
+    }
+
+    .small{
+      font-size:11px;
+      color:var(--muted);
+      line-height:1.1;
+    }
+
+    .big{
+      font-size:clamp(13px, 3.5vw, 19px);
       font-weight:800;
-      z-index:5
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      line-height:1.2;
     }
+
+    .score{
+      font-size:clamp(24px, 6vw, 40px);
+      font-weight:900;
+      line-height:1;
+      min-width:84px;
+      text-align:center;
+    }
+
     .center-note{
       position:absolute;
       left:50%;
       top:50%;
-      transform:translate(-50%,-50%);
-      background:rgba(2,6,23,.68);
+      transform:translate(-50%, -50%);
+      z-index:10;
+      background:rgba(2,6,23,.78);
       border:1px solid rgba(255,255,255,.12);
-      border-radius:20px;
-      padding:14px 20px;
+      border-radius:18px;
+      padding:14px 18px;
       font-weight:900;
-      font-size:clamp(18px,3vw,28px);
-      z-index:4
+      font-size:clamp(18px, 5vw, 28px);
+      text-align:center;
+      max-width:min(92vw, 520px);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
     }
-    @media (max-width:800px){
-      .stats,.character-grid{grid-template-columns:repeat(2,1fr)}
-      .hud{width:calc(100% - 12px);top:max(6px,env(safe-area-inset-top))}
-      .hud-box{padding:8px 10px;border-radius:14px}
+
+    .toast{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:max(14px, env(safe-area-inset-bottom));
+      z-index:12;
+      background:rgba(2,6,23,.82);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:999px;
+      padding:11px 16px;
+      font-size:14px;
+      font-weight:800;
+      text-align:center;
+      max-width:92vw;
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+    }
+
+    .hint{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:max(58px, calc(env(safe-area-inset-bottom) + 44px));
+      z-index:7;
+      background:rgba(2,6,23,.48);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:12px;
+      color:var(--muted);
+      text-align:center;
+      max-width:94vw;
+      pointer-events:none;
+    }
+
+    @media (max-width: 860px){
+      .stats{
+        grid-template-columns:repeat(3, 1fr);
+      }
+      .character-grid{
+        grid-template-columns:repeat(2, 1fr);
+      }
+      .panel{
+        padding:16px;
+        border-radius:20px;
+      }
+    }
+
+    @media (max-width: 560px){
+      .stats{
+        grid-template-columns:1fr;
+      }
+      .hud{
+        width:calc(100% - 8px);
+        gap:6px;
+      }
+      .hud-box{
+        padding:8px 8px;
+        border-radius:14px;
+      }
+      .hud-main{
+        gap:6px;
+      }
+      .primary, .secondary{
+        width:100%;
+      }
+      .actions{
+        flex-direction:column;
+      }
     }
   </style>
 </head>
@@ -192,9 +397,10 @@
       <div class="small">Ты</div>
       <div class="big" id="youName">—</div>
     </div>
+
     <div class="hud-box hud-main">
       <div>
-        <div class="small">Матч до 5</div>
+        <div class="small">Счёт</div>
         <div class="score" id="scoreText">0 : 0</div>
       </div>
       <div>
@@ -202,6 +408,7 @@
         <div class="big" id="statusText">Меню</div>
       </div>
     </div>
+
     <div class="hud-box" style="text-align:right">
       <div class="small">Соперник</div>
       <div class="big" id="enemyName">—</div>
@@ -210,57 +417,67 @@
 
   <div id="centerNote" class="center-note hidden"></div>
   <div id="toast" class="toast hidden"></div>
+  <div id="hint" class="hint hidden">Веди пальцем по своей половине поля</div>
 
   <div class="overlay" id="menu">
-    <div class="panel">
-      <div class="title">3 Кота: Онлайн Аэрохоккей</div>
-      <div class="subtitle">Быстрый матч 1 на 1. Игрок слева и игрок справа не могут заходить на чужую половину. Соперник подбирается автоматически.</div>
+    <div class="overlay-inner">
+      <div class="panel">
+        <h1 class="title">3 Кота: Онлайн Аэрохоккей</h1>
+        <p class="subtitle">
+          Быстрый матч 1 на 1. Пока второго игрока нет — игра ждёт. Как только соперник зайдёт, матч стартует автоматически.
+        </p>
 
-      <div class="stats">
-        <div class="stat">
-          <div class="label">ЭЛО</div>
-          <div class="value" id="eloValue">1000</div>
+        <div class="stats">
+          <div class="stat">
+            <div class="label">ЭЛО</div>
+            <div class="value" id="eloValue">1000</div>
+          </div>
+          <div class="stat">
+            <div class="label">Уровень</div>
+            <div class="value" id="levelValue">1</div>
+          </div>
+          <div class="stat">
+            <div class="label">Матчей</div>
+            <div class="value" id="matchesValue">0</div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="label">Уровень</div>
-          <div class="value" id="levelValue">1</div>
-        </div>
-        <div class="stat">
-          <div class="label">Сыграно матчей</div>
-          <div class="value" id="matchesValue">0</div>
-        </div>
-      </div>
 
-      <div class="character-grid" id="characterGrid"></div>
+        <div class="section-title">Выбери персонажа</div>
+        <div class="character-grid" id="characterGrid"></div>
 
-      <div class="actions">
-        <button class="primary" id="findBtn">Играть онлайн</button>
-        <button class="secondary" id="resetBtn">Сбросить прогресс</button>
+        <div class="actions">
+          <button class="primary" id="findBtn">Играть онлайн</button>
+          <button class="secondary" id="resetBtn">Сбросить прогресс</button>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="overlay hidden" id="resultOverlay">
-    <div class="panel" style="max-width:680px">
-      <div class="title" id="resultTitle">Матч окончен</div>
-      <div class="subtitle" id="resultSub">Подсчёт награды…</div>
-      <div class="stats">
-        <div class="stat">
-          <div class="label">Новая ЭЛО награда</div>
-          <div class="value" id="gainValue">+0</div>
+    <div class="overlay-inner">
+      <div class="panel" style="max-width:680px">
+        <h2 class="title" id="resultTitle">Матч окончен</h2>
+        <p class="subtitle" id="resultSub">Подсчёт награды…</p>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Награда</div>
+            <div class="value" id="gainValue">+0</div>
+          </div>
+          <div class="stat">
+            <div class="label">Твоя ЭЛО</div>
+            <div class="value" id="newEloValue">1000</div>
+          </div>
+          <div class="stat">
+            <div class="label">Уровень</div>
+            <div class="value" id="newLevelValue">1</div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="label">Твоя ЭЛО</div>
-          <div class="value" id="newEloValue">1000</div>
+
+        <div class="actions">
+          <button class="primary" id="againBtn">Новый матч</button>
+          <button class="secondary" id="menuBtn">В меню</button>
         </div>
-        <div class="stat">
-          <div class="label">Твой уровень</div>
-          <div class="value" id="newLevelValue">1</div>
-        </div>
-      </div>
-      <div class="actions">
-        <button class="primary" id="againBtn">Новый быстрый матч</button>
-        <button class="secondary" id="menuBtn">В меню</button>
       </div>
     </div>
   </div>
@@ -276,6 +493,7 @@
   const resultOverlay = document.getElementById('resultOverlay');
   const centerNote = document.getElementById('centerNote');
   const toast = document.getElementById('toast');
+  const hint = document.getElementById('hint');
 
   const scoreText = document.getElementById('scoreText');
   const statusText = document.getElementById('statusText');
@@ -292,19 +510,22 @@
   const resultTitle = document.getElementById('resultTitle');
   const resultSub = document.getElementById('resultSub');
 
-  const STORAGE_KEY = 'three_cats_online_progress_v1';
+  const STORAGE_KEY = 'three_cats_online_progress_v2';
+
   const characters = [
     { name: 'Гоня', role: 'Быстрый старт', cls: 'c1', short: 'Г' },
     { name: 'Карамелька', role: 'Точный удар', cls: 'c2', short: 'К' },
     { name: 'Коржик', role: 'Сильный напор', cls: 'c3', short: 'К' },
-    { name: 'Компот', role: 'Спокойный контроль', cls: 'c4', short: 'К' },
+    { name: 'Компот', role: 'Спокойный контроль', cls: 'c4', short: 'К' }
   ];
 
   let progress = loadProgress();
   let selectedCharacter = progress.character || 'Гоня';
+
   let mySide = null;
   let roomId = null;
   let gameState = null;
+
   let config = {
     width: 1280,
     height: 720,
@@ -312,15 +533,20 @@
     malletRadius: 34,
     puckRadius: 20
   };
-  let pointerActive = false;
 
-  const socket = io();
+  let pointerActive = false;
+  let rafId = null;
+  let gameFinishedHandled = false;
+
+  const socket = io({
+    transports: ['websocket', 'polling']
+  });
 
   function loadProgress() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) return JSON.parse(raw);
-    } catch {}
+    } catch (e) {}
     return { elo: 1000, matches: 0, character: 'Гоня' };
   }
 
@@ -342,6 +568,7 @@
   function renderCharacters() {
     const grid = document.getElementById('characterGrid');
     grid.innerHTML = '';
+
     characters.forEach(char => {
       const el = document.createElement('div');
       el.className = 'character' + (selectedCharacter === char.name ? ' selected' : '');
@@ -350,20 +577,22 @@
         <div class="char-name">${char.name}</div>
         <div class="char-role">${char.role}</div>
       `;
-      el.onclick = () => {
+      el.addEventListener('click', () => {
         selectedCharacter = char.name;
         saveProgress();
         renderCharacters();
-      };
+      });
       grid.appendChild(el);
     });
   }
 
-  function showToast(text, time = 1800) {
+  function showToast(text, ms = 1800) {
     toast.textContent = text;
     toast.classList.remove('hidden');
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(() => toast.classList.add('hidden'), time);
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => {
+      toast.classList.add('hidden');
+    }, ms);
   }
 
   function showCenter(text) {
@@ -375,71 +604,110 @@
     centerNote.classList.add('hidden');
   }
 
+  function showHint(text) {
+    hint.textContent = text;
+    hint.classList.remove('hidden');
+  }
+
+  function hideHint() {
+    hint.classList.add('hidden');
+  }
+
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.floor(window.innerWidth * dpr);
-    canvas.height = Math.floor(window.innerHeight * dpr);
+    canvas.width = Math.max(1, Math.floor(window.innerWidth * dpr));
+    canvas.height = Math.max(1, Math.floor(window.innerHeight * dpr));
     canvas.style.width = window.innerWidth + 'px';
     canvas.style.height = window.innerHeight + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function worldToScreenX(x) {
+  function scaleX(x) {
     return (x / config.width) * window.innerWidth;
   }
-  function worldToScreenY(y) {
+
+  function scaleY(y) {
     return (y / config.height) * window.innerHeight;
   }
+
   function screenToWorldX(x) {
     return (x / window.innerWidth) * config.width;
   }
+
   function screenToWorldY(y) {
     return (y / window.innerHeight) * config.height;
   }
 
+  function worldRadius(r) {
+    const sx = window.innerWidth / config.width;
+    const sy = window.innerHeight / config.height;
+    return r * Math.min(sx, sy);
+  }
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
   function sendPointer(clientX, clientY) {
     if (!mySide) return;
+
     let x = screenToWorldX(clientX);
     let y = screenToWorldY(clientY);
 
     if (mySide === 'left') {
-      x = Math.max(config.malletRadius + 12, Math.min(config.width / 2 - config.malletRadius - 8, x));
+      x = clamp(x, config.malletRadius + 12, config.width / 2 - config.malletRadius - 8);
     } else {
-      x = Math.max(config.width / 2 + config.malletRadius + 8, Math.min(config.width - config.malletRadius - 12, x));
+      x = clamp(x, config.width / 2 + config.malletRadius + 8, config.width - config.malletRadius - 12);
     }
-    y = Math.max(config.malletRadius + 12, Math.min(config.height - config.malletRadius - 12, y));
+
+    y = clamp(y, config.malletRadius + 12, config.height - config.malletRadius - 12);
+
     socket.emit('move', { x, y });
   }
 
   function setupInput() {
-    canvas.addEventListener('pointerdown', e => {
+    canvas.addEventListener('pointerdown', (e) => {
       pointerActive = true;
       sendPointer(e.clientX, e.clientY);
-    });
-
-    canvas.addEventListener('pointermove', e => {
-      if (!pointerActive) return;
-      sendPointer(e.clientX, e.clientY);
-    });
-
-    canvas.addEventListener('touchstart', e => {
-      if (!e.touches[0]) return;
-      pointerActive = true;
-      sendPointer(e.touches[0].clientX, e.touches[0].clientY);
       e.preventDefault();
     }, { passive: false });
 
-    canvas.addEventListener('touchmove', e => {
-      if (!e.touches[0]) return;
+    canvas.addEventListener('pointermove', (e) => {
       if (!pointerActive) return;
-      sendPointer(e.touches[0].clientX, e.touches[0].clientY);
+      sendPointer(e.clientX, e.clientY);
       e.preventDefault();
     }, { passive: false });
 
-    window.addEventListener('pointerup', () => pointerActive = false);
-    window.addEventListener('pointercancel', () => pointerActive = false);
-    window.addEventListener('touchend', () => pointerActive = false, { passive: true });
-    window.addEventListener('touchcancel', () => pointerActive = false, { passive: true });
+    window.addEventListener('pointerup', () => {
+      pointerActive = false;
+    });
+
+    window.addEventListener('pointercancel', () => {
+      pointerActive = false;
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      pointerActive = true;
+      sendPointer(t.clientX, t.clientY);
+      e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+      const t = e.touches && e.touches[0];
+      if (!t || !pointerActive) return;
+      sendPointer(t.clientX, t.clientY);
+      e.preventDefault();
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => {
+      pointerActive = false;
+    }, { passive: true });
+
+    window.addEventListener('touchcancel', () => {
+      pointerActive = false;
+    }, { passive: true });
   }
 
   function drawRoundedRect(x, y, w, h, r) {
@@ -455,28 +723,33 @@
   function drawField() {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    ctx.clearRect(0, 0, w, h);
+    const pad = Math.max(8, Math.min(16, w * 0.02));
+    const radius = Math.max(16, Math.min(28, w * 0.03));
 
-    const pad = 14;
-    const radius = 28;
+    ctx.clearRect(0, 0, w, h);
 
     ctx.save();
     drawRoundedRect(pad, pad, w - pad * 2, h - pad * 2, radius);
-    ctx.fillStyle = 'rgba(15,23,42,0.35)';
+    ctx.fillStyle = 'rgba(15,23,42,0.32)';
     ctx.fill();
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2.5;
     ctx.strokeStyle = 'rgba(255,255,255,0.14)';
     ctx.stroke();
     ctx.restore();
 
-    const midX = worldToScreenX(config.width / 2);
-    const goalTop = worldToScreenY(config.height / 2 - config.goalHeight / 2);
-    const goalBottom = worldToScreenY(config.height / 2 + config.goalHeight / 2);
+    const midX = scaleX(config.width / 2);
+    const goalTop = scaleY(config.height / 2 - config.goalHeight / 2);
+    const goalBottom = scaleY(config.height / 2 + config.goalHeight / 2);
 
     ctx.save();
-    ctx.setLineDash([12, 14]);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.035)';
+    ctx.fillRect(pad, pad, midX - pad, h - pad * 2);
+    ctx.fillRect(midX, pad, w - pad - midX, h - pad * 2);
+
+    ctx.setLineDash([10, 10]);
     ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.moveTo(midX, pad);
     ctx.lineTo(midX, h - pad);
@@ -484,195 +757,153 @@
     ctx.setLineDash([]);
 
     ctx.beginPath();
-    ctx.arc(midX, h / 2, Math.min(w, h) * 0.12, 0, Math.PI * 2);
+    ctx.arc(midX, h / 2, Math.min(w, h) * 0.11, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.strokeStyle = 'rgba(245,158,11,0.55)';
-    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(245,158,11,0.58)';
+    ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(pad, goalTop);
     ctx.lineTo(pad, goalBottom);
     ctx.stroke();
+
     ctx.beginPath();
     ctx.moveTo(w - pad, goalTop);
     ctx.lineTo(w - pad, goalBottom);
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(255,255,255,0.05)';
-    ctx.fillRect(pad, pad, midX - pad, h - pad * 2);
-    ctx.fillRect(midX, pad, w - pad - midX, h - pad * 2);
     ctx.restore();
   }
 
-  function drawMallet(player, mine) {
-    const x = worldToScreenX(player.x);
-    const y = worldToScreenY(player.y);
-    const r = (config.malletRadius / config.width) * window.innerWidth;
-
+  function malletStyle(character) {
     const map = {
       'Гоня': ['#fb7185', '#f59e0b', 'Г'],
       'Карамелька': ['#f472b6', '#60a5fa', 'К'],
       'Коржик': ['#f59e0b', '#ef4444', 'К'],
-      'Компот': ['#34d399', '#3b82f6', 'К'],
+      'Компот': ['#34d399', '#3b82f6', 'К']
     };
-    const item = map[player.character] || ['#f59e0b', '#ef4444', '?'];
+    return map[character] || ['#f59e0b', '#ef4444', '?'];
+  }
 
+  function drawMallet(player, mine) {
+    if (!player) return;
+
+    const x = scaleX(player.x);
+    const y = scaleY(player.y);
+    const r = worldRadius(config.malletRadius);
+
+    const [c1, c2, letter] = malletStyle(player.character);
     const grad = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
-    grad.addColorStop(0, item[0]);
-    grad.addColorStop(1, item[1]);
+    grad.addColorStop(0, c1);
+    grad.addColorStop(1, c2);
 
     ctx.save();
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fillStyle = grad;
     ctx.fill();
-    ctx.lineWidth = mine ? 5 : 3;
-    ctx.strokeStyle = mine ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.55)';
+
+    ctx.lineWidth = mine ? 4 : 2.5;
+    ctx.strokeStyle = mine ? 'rgba(255,255,255,0.96)' : 'rgba(255,255,255,0.56)';
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(255,255,255,0.97)';
-    ctx.font = `900 ${Math.max(16, r * 0.95)}px system-ui`;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.46, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.fill();
+
+    ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(item[2], x, y + 1);
+    ctx.font = `900 ${Math.max(14, r * 0.9)}px -apple-system, BlinkMacSystemFont, sans-serif`;
+    ctx.fillText(letter, x, y + 1);
     ctx.restore();
   }
 
   function drawPuck(puck) {
-    const x = worldToScreenX(puck.x);
-    const y = worldToScreenY(puck.y);
-    const r = (config.puckRadius / config.width) * window.innerWidth;
+    if (!puck) return;
+
+    const x = scaleX(puck.x);
+    const y = scaleY(puck.y);
+    const r = worldRadius(config.puckRadius);
 
     ctx.save();
-    const grad = ctx.createRadialGradient(x - r * 0.2, y - r * 0.2, r * 0.2, x, y, r);
+    const grad = ctx.createRadialGradient(x - r * 0.2, y - r * 0.2, r * 0.15, x, y, r);
     grad.addColorStop(0, '#ffffff');
     grad.addColorStop(1, '#94a3b8');
+
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fillStyle = grad;
     ctx.fill();
+
     ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(15,23,42,0.55)';
+    ctx.strokeStyle = 'rgba(15,23,42,0.62)';
     ctx.stroke();
+
     ctx.restore();
   }
 
-  function loop() {
+  function drawWaitingText() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 22px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillText('Нажми "Играть онлайн"', window.innerWidth / 2, window.innerHeight / 2 - 16);
+    ctx.font = '700 14px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillText('и дождись соперника', window.innerWidth / 2, window.innerHeight / 2 + 16);
+    ctx.restore();
+  }
+
+  function renderFrame() {
     drawField();
 
-    if (gameState && gameState.players) {
+    if (gameState && gameState.players && gameState.puck) {
       drawMallet(gameState.players.left, mySide === 'left');
       drawMallet(gameState.players.right, mySide === 'right');
       drawPuck(gameState.puck);
     } else {
-      ctx.save();
-      ctx.fillStyle = 'rgba(255,255,255,0.15)';
-      ctx.font = '900 28px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText('Выбери персонажа и нажми "Играть онлайн"', window.innerWidth / 2, window.innerHeight / 2);
-      ctx.restore();
+      drawWaitingText();
     }
 
-    requestAnimationFrame(loop);
+    rafId = requestAnimationFrame(renderFrame);
   }
 
-  document.getElementById('findBtn').onclick = () => {
+  function startQueue() {
     resultOverlay.classList.add('hidden');
     menu.classList.add('hidden');
+    gameFinishedHandled = false;
     showCenter('Ищем соперника…');
+    showHint('Как только второй игрок зайдёт, матч начнётся');
     statusText.textContent = 'Поиск матча';
     socket.emit('findMatch', { character: selectedCharacter });
-  };
+  }
 
-  document.getElementById('againBtn').onclick = () => {
-    resultOverlay.classList.add('hidden');
-    showCenter('Ищем соперника…');
-    statusText.textContent = 'Поиск матча';
-    socket.emit('findMatch', { character: selectedCharacter });
-  };
+  document.getElementById('findBtn').addEventListener('click', startQueue);
+  document.getElementById('againBtn').addEventListener('click', startQueue);
 
-  document.getElementById('menuBtn').onclick = () => {
+  document.getElementById('menuBtn').addEventListener('click', () => {
     resultOverlay.classList.add('hidden');
     menu.classList.remove('hidden');
+    hideCenter();
+    hideHint();
     mySide = null;
     roomId = null;
     gameState = null;
+    gameFinishedHandled = false;
     statusText.textContent = 'Меню';
     youName.textContent = '—';
     enemyName.textContent = '—';
-  };
+    scoreText.textContent = '0 : 0';
+  });
 
-  document.getElementById('resetBtn').onclick = () => {
+  document.getElementById('resetBtn').addEventListener('click', () => {
     progress = { elo: 1000, matches: 0, character: selectedCharacter };
     saveProgress();
     renderMenuStats();
     showToast('Прогресс сброшен');
-  };
-
-  socket.on('queue', () => {
-    menu.classList.add('hidden');
-    showCenter('Ищем соперника…');
-    statusText.textContent = 'Поиск матча';
-  });
-
-  socket.on('matchFound', payload => {
-    mySide = payload.side;
-    roomId = payload.roomId;
-    hideCenter();
-    showToast('Соперник найден');
-    resultOverlay.classList.add('hidden');
-    statusText.textContent = mySide === 'left' ? 'Ты слева' : 'Ты справа';
-    youName.textContent = selectedCharacter + (mySide === 'left' ? ' • слева' : ' • справа');
-    enemyName.textContent = payload.opponent || 'Игрок';
-  });
-
-  socket.on('state', payload => {
-    config = payload.config || config;
-    gameState = payload.state || gameState;
-
-    if (!gameState) return;
-
-    scoreText.textContent = `${gameState.score.left} : ${gameState.score.right}`;
-
-    if (gameState.status === 'playing') {
-      statusText.textContent = 'Матч идёт';
-      hideCenter();
-    } else if (gameState.status === 'goal') {
-      statusText.textContent = 'Гол';
-      showCenter(gameState.goalMessage || 'Гол!');
-    } else if (gameState.status === 'finished') {
-      statusText.textContent = 'Матч окончен';
-      hideCenter();
-
-      const myWon = gameState.winner === mySide;
-      const gain = Math.floor(Math.random() * 301) + 300;
-      progress.elo += gain;
-      progress.matches += 1;
-      saveProgress();
-      renderMenuStats();
-
-      gainValue.textContent = `+${gain}`;
-      newEloValue.textContent = progress.elo;
-      newLevelValue.textContent = getLevel(progress.elo);
-      resultTitle.textContent = myWon ? 'Победа!' : 'Матч окончен';
-      resultSub.textContent = myWon
-        ? 'Хорошая катка. ЭЛО уже начислено.'
-        : 'Даже после поражения опыт идёт дальше. ЭЛО уже начислено.';
-      resultOverlay.classList.remove('hidden');
-    }
-  });
-
-  socket.on('opponentLeft', () => {
-    showCenter('Соперник вышел');
-    statusText.textContent = 'Соперник вышел';
-    showToast('Соперник отключился');
-    setTimeout(() => {
-      menu.classList.remove('hidden');
-      hideCenter();
-      gameState = null;
-      mySide = null;
-      roomId = null;
-    }, 1400);
   });
 
   socket.on('connect', () => {
@@ -681,15 +912,109 @@
 
   socket.on('disconnect', () => {
     showCenter('Нет соединения с сервером');
+    hideHint();
     statusText.textContent = 'Оффлайн';
+  });
+
+  socket.on('queue', () => {
+    menu.classList.add('hidden');
+    showCenter('Ищем соперника…');
+    showHint('Открой ссылку у друга или во второй вкладке');
+    statusText.textContent = 'Поиск матча';
+  });
+
+  socket.on('matchFound', (payload) => {
+    mySide = payload.side;
+    roomId = payload.roomId;
+    gameFinishedHandled = false;
+
+    hideCenter();
+    showHint('Веди пальцем по своей половине поля');
+    showToast('Соперник найден');
+
+    resultOverlay.classList.add('hidden');
+    menu.classList.add('hidden');
+
+    statusText.textContent = mySide === 'left' ? 'Ты слева' : 'Ты справа';
+    youName.textContent = selectedCharacter + (mySide === 'left' ? ' • слева' : ' • справа');
+    enemyName.textContent = payload.opponent || 'Игрок';
+  });
+
+  socket.on('state', (payload) => {
+    if (!payload) return;
+
+    config = payload.config || config;
+    gameState = payload.state || gameState;
+
+    if (!gameState) return;
+
+    if (gameState.score) {
+      scoreText.textContent = `${gameState.score.left} : ${gameState.score.right}`;
+    }
+
+    if (gameState.status === 'playing') {
+      statusText.textContent = 'Матч идёт';
+      hideCenter();
+      showHint('Веди пальцем по своей половине поля');
+    } else if (gameState.status === 'goal') {
+      statusText.textContent = 'Гол';
+      showCenter(gameState.goalMessage || 'Гол!');
+      showHint('Сейчас продолжим');
+    } else if (gameState.status === 'finished') {
+      statusText.textContent = 'Матч окончен';
+      hideCenter();
+      hideHint();
+
+      if (!gameFinishedHandled) {
+        gameFinishedHandled = true;
+        const gain = Math.floor(Math.random() * 301) + 300;
+        const myWon = gameState.winner === mySide;
+
+        progress.elo += gain;
+        progress.matches += 1;
+        saveProgress();
+        renderMenuStats();
+
+        gainValue.textContent = `+${gain}`;
+        newEloValue.textContent = progress.elo;
+        newLevelValue.textContent = getLevel(progress.elo);
+        resultTitle.textContent = myWon ? 'Победа!' : 'Матч окончен';
+        resultSub.textContent = myWon
+          ? 'Хорошая катка. ЭЛО уже начислено.'
+          : 'Катка завершена. ЭЛО уже начислено.';
+      }
+
+      resultOverlay.classList.remove('hidden');
+    }
+  });
+
+  socket.on('opponentLeft', () => {
+    showCenter('Соперник вышел');
+    hideHint();
+    statusText.textContent = 'Соперник вышел';
+    showToast('Соперник отключился');
+
+    setTimeout(() => {
+      menu.classList.remove('hidden');
+      hideCenter();
+      gameState = null;
+      mySide = null;
+      roomId = null;
+      scoreText.textContent = '0 : 0';
+      youName.textContent = '—';
+      enemyName.textContent = '—';
+      statusText.textContent = 'Меню';
+    }, 1300);
   });
 
   renderCharacters();
   renderMenuStats();
   resize();
   setupInput();
-  loop();
   window.addEventListener('resize', resize);
+
+  if (rafId) cancelAnimationFrame(rafId);
+  renderFrame();
 })();
 </script>
 </body>
